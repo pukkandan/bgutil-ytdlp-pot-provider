@@ -197,10 +197,14 @@ class BgUtilScriptPTPBase(BgUtilPTPBase, abc.ABC):
             return False
         if not self._jsrt_path:
             return False
-        stdout, _, returncode = Popen.run(
-            [self._jsrt_path, *self._jsrt_args(), script_path, '--version'],
-            env=self._jsrt_envs(), timeout=self._GET_SCRIPT_VSN_TIMEOUT,
-            text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE)
+        try:
+            stdout, _, returncode = Popen.run(
+                [self._jsrt_path, *self._jsrt_args(), script_path, '--version'],
+                env=self._jsrt_envs(), timeout=self._GET_SCRIPT_VSN_TIMEOUT,
+                text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE)
+        except subprocess.TimeoutExpired as e:
+            self.logger.warning(f'Failed to check script version. Script timed out', once=True)
+            return False
         stdout = stdout.strip()
         if returncode:
             self.logger.warning(
